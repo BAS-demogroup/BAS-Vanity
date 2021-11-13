@@ -32,14 +32,20 @@
 	sta $00
 }
 
+!macro DisableRamProtection {
+	lda #$70
+	sta $d640
+	eom
+}
+
 !macro RunDMAJob .JobPointer {
 	lda #(.JobPointer >> 16)
-	sta $D702
-	sta $D704
+	sta $d702
+	sta $d704
 	lda #>.JobPointer
-	sta $D701
+	sta $d701
 	lda #<.JobPointer
-	sta $D705
+	sta $d705
 }
 
 !macro DMAFillJob .SourceByte, .Destination, .Length, .Chain {

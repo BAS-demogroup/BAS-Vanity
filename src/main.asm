@@ -10,27 +10,92 @@
 	+Enable40mhz
 	+MapIO
 	
-	; initial test will just have a short sample that it can play once, before 
-	; getting into memory management.
-	lda #<samplestart
+	; remap all interrupts (Is this necessary if I never cli?)
+	lda #<empty_irq
+	sta $0314
+	sta $0316
+	sta $fffa
+	sta $fffc
+	sta $fffe
+	lda #>empty_irq
+	sta $0315
+	sta $0316
+	sta $fffb
+	sta $fffd
+	sta $ffff
+	
+	; remap color ram
+	; disable ram write protection in pages 2 + 3
+	+DisableRamProtection
+	
+	; load pcm file
+	ldx #$0f
+	lda #$a0
+-	sta fastload_filename, x
+	dex
+	bpl -
+	
+	ldx #$ff
+-	inx
+	cpx #$10
+	beq +
+	lda audio, x
+	beq +
+	sta fastload_filename, x
+	bne -
+	
++	inx
+	stx fastload_filename_len
+	
+	lda #$00
+	sta fastload_address + 0
+	lda #$00
+	sta fastload_address + 1
+	lda #$02
+	sta fastload_address + 2
+	lda #$00
+	sta fastload_address + 3
+	
+-	jsr fastload_irq
+	lda fastload_request
+	bne -
+	
+	lda #$01
+	sta fastload_request
+	
+-	jsr fastload_irq
+	lda fastload_request
+	bmi +
+	bne -
+	beq ++
+	
++
+	inc $042f
+	rts
+
+++
+	
+	; https://discord.com/channels/719326990221574164/782757495180361778/906427547347202108
+	; set volume and panning
+	
+	; play sample
+	lda #$00
 	sta ch_0_cur_addr
-	lda #>samplestart
 	sta ch_0_cur_addr + 1
-	lda #00
+	lda #$02
 	sta ch_0_cur_addr + 2
 	
-	lda #<sampleend
+	lda #$ff
 	sta ch_0_t_addr
-	lda #>sampleend
 	sta ch_0_t_addr + 1
 	
 	; @gardners:
-	; so 44K1 = 44100 x 2^24 / 40.5 x 10^6
+	; so 44K1 = ( 44100 x 2^24 ) / ( 40.5 x 10^6 )
 	; = 18269
 	; = $00475D, assuming I got it right.
-	lda #<$475d
+	lda #<$23ae				; 22050
 	sta ch_0_freq
-	lda #>$475d
+	lda #>$23ae
 	sta ch_0_freq + 1
 	lda #$00
 	sta ch_0_freq + 2
@@ -38,14 +103,8 @@
 	lda #$ff
 	sta ch_0_volume
 	
-	lda #%10100011
+	lda #%10000010		; Not sure yet if it's signed or unsigned.
 	sta ch_0_control
-	
-	; load wav file into attic memory
-	; https://discord.com/channels/719326990221574164/782757495180361778/906427547347202108
-	; set volume and such
-	
-	; play sample
 	
 	; basic raster timed loop
 	
@@ -59,7 +118,14 @@
 	jmp .rasterloop
 }
 
-samplestart:
-!bin "../test1.raw"
-sampleend:
-!set samplelength = sampleend - samplestart
+; I think this may need to do more than JUST rti.
+empty_irq:
+	rti
+
+!src "fastload.asm"
+
+audio:
+!pet "audio.raw"
+!byte $00
+
+!set audio_len = * - audio
