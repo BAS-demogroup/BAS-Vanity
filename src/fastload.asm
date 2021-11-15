@@ -27,16 +27,15 @@ fastload_irq:
 	;; If the FDC is busy, do nothing, as we can't progress.
 	;; This really simplifies the state machine into a series of
 	;; sector reads
-	lda fastload_request
-	bne todo
+	lda $d082
+	bpl todo
 	rts
 todo:	
-	lda $d082
-	bpl fl_fdc_not_busy
+	lda fastload_request
+	bne fl_fdc_not_busy
 	rts
 fl_fdc_not_busy:	
 	;; FDC is not busy, so check what state we are in
-	lda fastload_request
 	bpl fl_not_in_error_state
 	rts
 fl_not_in_error_state:
@@ -116,7 +115,7 @@ fl_filenamecheckloop:
 fl_check_loop_inner:
 
 fl_buffaddr:
-	lda fastload_sector_buffer+$100,x
+	lda fastload_sector_buffer + $100,x
 	
 	cmp fastload_filename,y	
 	bne fl_filename_differs

@@ -14,12 +14,14 @@
 	lda #<empty_irq
 	sta $0314
 	sta $0316
+	sta $0318
 	sta $fffa
 	sta $fffc
 	sta $fffe
 	lda #>empty_irq
 	sta $0315
 	sta $0316
+	sta $0319
 	sta $fffb
 	sta $fffd
 	sta $ffff
@@ -49,17 +51,16 @@
 	
 	lda #$00
 	sta fastload_address + 0
-	lda #$00
 	sta fastload_address + 1
+	sta fastload_address + 3
 	lda #$02
 	sta fastload_address + 2
-	lda #$00
-	sta fastload_address + 3
 	
 -	jsr fastload_irq
 	lda fastload_request
 	bne -
 	
+debug_here:
 	lda #$01
 	sta fastload_request
 	
@@ -70,10 +71,15 @@
 	beq ++
 	
 +
-	inc $042f
-	rts
+	lda #$02
+	sta $d020
+	sta $d021
+	brk
 
 ++
+	lda #$01
+	sta $d020
+	sta $d021
 	
 	; https://discord.com/channels/719326990221574164/782757495180361778/906427547347202108
 	; set volume and panning
@@ -103,7 +109,7 @@
 	lda #$ff
 	sta ch_0_volume
 	
-	lda #%10000010		; Not sure yet if it's signed or unsigned.
+	lda #%10000010
 	sta ch_0_control
 	
 	; basic raster timed loop
