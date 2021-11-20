@@ -23,6 +23,7 @@ fl_file_next_sector:	!byte 0
 fastload_sector_buffer:
 	*=*+512
 	
+debug_here:
 fastload_irq:
 	;; If the FDC is busy, do nothing, as we can't progress.
 	;; This really simplifies the state machine into a series of
