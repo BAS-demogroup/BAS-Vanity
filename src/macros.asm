@@ -38,6 +38,11 @@
 	eom
 }
 
+!macro ToggleNTSC .on {
+	lda #%10000000 * .on
+	sta $d06f
+}
+
 !macro RunDMAJob .JobPointer {
 	lda #(.JobPointer >> 16)
 	sta $d702
@@ -85,6 +90,33 @@
 
 	!word .Source & $ffff
 	!byte (.Source >> 16) + .backByte
+
+	!word .Destination & $ffff
+	!byte ((.Destination >> 16) & $0f)  + .backByte
+	!if(.Chain) {
+		!word $0000
+	}
+}
+
+!macro DMAAtticCopyJob .Source, .Destination, .Length, .Chain, .Backwards {
+	!byte $80, (.Source & %1111111100000000000000000000) >> 20
+	!byte $00 //No more options
+	!if(.Chain) {
+		!byte $04 //Copy and chain
+	} else {
+		!byte $00 //Copy and last request
+	}	
+	
+	!set .backByte = 0
+	!if(.Backwards) {
+		!set .backByte = $40
+		!set .Source = .Source + .Length - 1
+		!set .Destination = .Destination + .Length - 1
+	}
+	!word .Length //Size of Copy
+
+	!word .Source & $ffff
+	!byte ((.Source & $ff0000) >> 16) + .backByte
 
 	!word .Destination & $ffff
 	!byte ((.Destination >> 16) & $0f)  + .backByte
