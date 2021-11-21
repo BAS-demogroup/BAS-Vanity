@@ -56,20 +56,11 @@ main:
 	sta $d020
 	sta $d021
 	
-	; https://discord.com/channels/719326990221574164/782757495180361778/906427547347202108
-	; set volume and panning
-	
-	; play sample
-	ldx #$02
-	ldy #%10100010
-	
 	lda #$00
 	sta ch_0_cur_addr
 	sta ch_0_cur_addr + 1
 	sta ch_2_cur_addr
 	sta ch_2_cur_addr + 1
-	stx ch_0_cur_addr + 2
-	stx ch_2_cur_addr + 2
 	
 	sta ch_0_t_addr
 	sta ch_0_t_addr + 1
@@ -94,45 +85,38 @@ main:
 	sta ch_0_volume
 	sta ch_2_volume
 	
-	sty ch_0_control
-	sty ch_2_control
-
-	inx
-	
--	lda ch_0_control
-	and #%00001000
-	beq -
-	
-	stx ch_0_cur_addr + 2
-	sty ch_0_control
-	stx ch_2_cur_addr + 2
-	sty ch_2_control
-	
-	inx
-	
--	lda ch_0_control
-	and #%00001000
-	beq -
-	
-	stx ch_0_cur_addr + 2
-	sty ch_0_control
-	stx ch_2_cur_addr + 2
-	sty ch_2_control
-	
--	lda ch_0_control
-	and #%00001000
-	beq -
+	jmp audio_next
 	
 	; basic raster timed loop
 	
 .rasterloop:
--	lda #$80
+-	lda ch_0_control
+	and #%00001000
+	bne audio_next
+	
+	lda #$80
 	cmp $d012
 	bne -
 	
 	; Theoretically, do stuff here
 	
 	jmp .rasterloop
+	
+audio_next:
+	inc audio_block
+	
+	lda audio_block
+	cmp #$05
+	bpl +
+	
+	sta ch_0_cur_addr + 2
+	sta ch_2_cur_addr + 2
+	
+	lda #%10100010
+	sta ch_0_control
+	sta ch_2_control
+	
++	jmp .rasterloop
 }
 
 ; I think this may need to do more than JUST rti.
@@ -145,3 +129,6 @@ load_audio_2:
 	+DMAAtticCopyJob $8010000, $30000, $FFFF, $0, $0
 load_audio_3:
 	+DMAAtticCopyJob $8020000, $40000, $FFFF, $0, $0
+
+audio_block:
+	!byte $01
