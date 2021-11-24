@@ -14,9 +14,13 @@
 	!byte $FE,$11,$20,$22,$41,$55,$44,$49,$4F,$32,$2E,$52,$41,$57,$22,$2C
 	!byte $50,$31,$33,$34,$32,$38,$33,$32,$36,$34,$2C,$52,$00,$6F,$20,$28
 	!byte $00,$FE,$11,$20,$22,$41,$55,$44,$49,$4F,$33,$2E,$52,$41,$57,$22
-	!byte $2C,$50,$31,$33,$34,$33,$34,$38,$38,$30,$30,$2C,$52,$00,$78,$20
-	!byte $32,$00,$FE,$02,$20,$30,$00,$83,$20,$3C,$00,$9E,$20,$38,$33,$32
-	!byte $35,$00,$00,$00
+	!byte $2C,$50,$31,$33,$34,$33,$34,$38,$38,$30,$30,$2C,$52,$00,$92,$20
+	!byte $32,$00,$FE,$11,$20,$22,$54,$49,$4C,$45,$4D,$41,$50,$2E,$43,$48
+	!byte $52,$53,$22,$2C,$50,$31,$33,$34,$34,$31,$34,$33,$33,$36,$2C,$52
+	!byte $00,$B5,$20,$3C,$00,$FE,$11,$20,$22,$54,$49,$4C,$45,$4D,$41,$50
+	!byte $2E,$43,$4C,$55,$54,$22,$2C,$50,$31,$33,$34,$34,$37,$39,$38,$37
+	!byte $32,$2C,$52,$00,$BE,$20,$46,$00,$FE,$02,$20,$30,$00,$C9,$20,$50
+	!byte $00,$9E,$20,$38,$33,$39,$35,$00,$00,$00
 }
 
 !zone main {
@@ -24,7 +28,9 @@ main:
 	sei
 	+Enable40mhz
 	+MapIO
-	+ToggleNTSC 0
+	+ToggleNTSC $0
+	+SetAdvancedGraphicsModes $0, $0, $0, $0, $0, $1, $1, $1
+	+Set40ColumnMode
 	
 	; remap all interrupts (Is this necessary if I never cli?  Like, for the 
 	; nmi maybe?)
@@ -43,9 +49,18 @@ main:
 	sta $fffd
 	sta $ffff
 	
-	; remap color ram
 	; disable ram write protection in pages 2 + 3
 	+DisableRamProtection
+	
+	; load charset
+	+RunDMAJob load_charset
+	+SetCharacterGeneratorData $50000
+	
+	; load palette
+	+RunDMAJob load_palette
+	+SetColorRAM $4000
+	
+	+SetScreenMemory $8000
 	
 	; load pcm file
 	+RunDMAJob load_audio_1
@@ -124,11 +139,15 @@ empty_irq:
 	rti
 
 load_audio_1:
-	+DMAAtticCopyJob $8000000, $20000, $FFFF, $0, $0
+	+DMAAtticCopyJob $8000000, $20000, $0000, $0, $0
 load_audio_2:
-	+DMAAtticCopyJob $8010000, $30000, $FFFF, $0, $0
+	+DMAAtticCopyJob $8010000, $30000, $0000, $0, $0
 load_audio_3:
-	+DMAAtticCopyJob $8020000, $40000, $FFFF, $0, $0
+	+DMAAtticCopyJob $8020000, $40000, $0000, $0, $0
+load_charset:
+	+DMAAtticCopyJob $8030000, $50000, $EF00, $0, $0
+load_palette:
+	+DMAAtticCopyJob $8040000, $04000, $0300, $0, $0
 
 audio_block:
 	!byte $01

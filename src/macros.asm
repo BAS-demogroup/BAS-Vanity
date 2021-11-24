@@ -43,6 +43,43 @@
 	sta $d06f
 }
 
+; Not completely sold on doing it this way.
+!macro SetAdvancedGraphicsModes .alphen, .vfast, .palemu, .spr640, .smth, .fclrhi, .fclrlo, .chr16 {
+	!set .arg = .alphen * $80 + .vfast * $40 + .palemu * $20 + .spr640 * $10 + .smth * $08 + .fclrhi * $04 + .fclrlo * $02 + .chr16
+	lda #.arg
+	sta $d054
+}
+
+!macro Set40ColumnMode {
+	lda #%01111111
+	trb $d031
+}
+
+!macro SetCharacterGeneratorData .address {
+	lda #<.address
+	sta $d068
+	lda #>.address
+	sta $d069
+	lda #(.address >> 16)
+	sta $d06a
+}
+
+!macro SetColorRAM .address {
+	lda #<.address
+	sta $d064
+	lda #>.address
+	sta $d065
+}
+
+!macro SetScreenMemory .address {
+	lda #<.address
+	sta $d060
+	lda #>.address
+	sta $d061
+	lda #(.address >> 16)
+	sta $d062
+}
+
 !macro RunDMAJob .JobPointer {
 	lda #(.JobPointer >> 16)
 	sta $d702
