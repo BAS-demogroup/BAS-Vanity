@@ -58,7 +58,7 @@ main:
 	
 	; load palette
 	+RunDMAJob load_palette
-	+SetColorRAM $4000
+	;+SetColorRAM $4000
 	
 	+SetScreenMemory $8000
 	
@@ -147,7 +147,7 @@ load_audio_3:
 load_charset:
 	+DMAAtticCopyJob $8030000, $50000, $EF00, $0, $0
 load_palette:
-	+DMAAtticCopyJob $8040000, $04000, $0300, $0, $0
+	+DMAAtticCopyJob $8040000, $0D100, $0300, $0, $0
 
 audio_block:
 	!byte $01
